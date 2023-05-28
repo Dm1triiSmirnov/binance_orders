@@ -34,15 +34,28 @@ class CreateOrdersView(APIView):
 
         for i in range(number):
             price = random.uniform(price_min, price_max)
+            price = round(price, 8)
             volume_dif = random.uniform(-amount_dif, amount_dif)
             actual_volume = order_volume + volume_dif
-            actual_volume = round(actual_volume, 2)
+            actual_volume = round(actual_volume, 8)
 
             try:
                 if side == "SELL":
-                    order = create_sell_order(actual_volume, price)
+                    min_price, max_price = get_price_range("ETHUSDT", "SELL")
                 elif side == "BUY":
-                    order = create_buy_order(actual_volume, price)
+                    min_price, max_price = get_price_range("ETHUSDT", "BUY")
+                else:
+                    raise ValueError("Invalid side")
+
+                if price < min_price or price > max_price:
+                    return Response(
+                        {
+                            "error": "Price does not meet the filter requirements for the selected side"
+                        },
+                        status=400,
+                    )
+
+                order = create_order(symbol="ETHUSDT", side=side, quantity=actual_volume, price=price)
 
                 response_data.append(
                     {
@@ -53,43 +66,38 @@ class CreateOrdersView(APIView):
                         "price": order["price"],
                     }
                 )
+
             except Exception as e:
                 return Response({"error": str(e)}, status=400)
 
         return Response({"orders": response_data}, status=201)
 
 
-def create_sell_order(volume, price):
+def get_price_range(symbol, side):
+    symbol_info = client.get_symbol_info(symbol)
+    percent_price_filter = next(filter(lambda f: f["filterType"] == "PERCENT_PRICE", symbol_info["filters"]))
+    min_price_percent = float(percent_price_filter["multiplierDown"])
+    max_price_percent = float(percent_price_filter["multiplierUp"])
+    current_price = float(client.get_symbol_ticker(symbol=symbol)["price"])
+
+    if side == "SELL":
+        min_price = current_price * (1 - min_price_percent)
+        max_price = current_price * (1 - max_price_percent)
+    else:
+        min_price = current_price * (1 + min_price_percent)
+        max_price = current_price * (1 + max_price_percent)
+
+    return min_price, max_price
+
+
+def create_order(symbol, side, quantity, price):
     try:
         order = client.create_order(
-            symbol="BTCUSDT",
-            side="SELL",
+            symbol=symbol,
+            side=side,
             type="LIMIT",
             timeInForce="GTC",
-            quantity=volume,
-            price=price,
-        )
-
-        print("Ордер успешно создан:")
-        print(order)
-
-        return order
-
-    except BinanceAPIException as e:
-        print("Ошибка API Binance:", e)
-
-    except BinanceOrderException as e:
-        print("Ошибка создания ордера:", e)
-
-
-def create_buy_order(volume, price):
-    try:
-        order = client.create_order(
-            symbol="BTCUSDT",
-            side="BUY",
-            type="LIMIT",
-            timeInForce="GTC",
-            quantity=volume,
+            quantity=quantity,
             price=price,
         )
 
