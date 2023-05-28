@@ -9,17 +9,18 @@ format:
 	poetry run isort orders
 
 run:
-	python3 manage.py runserver
+	poetry run python3 manage.py runserver
+
 
 makemigrations:
-	python3 manage.py makemigrations
+	poetry run python3 manage.py makemigrations
 
 migrate:
-	python3 manage.py migrate
+	poetry run python3 manage.py migrate
 
 mm:
-	python3 manage.py makemigrations
-	python3 manage.py migrate
+	poetry run python3 manage.py makemigrations
+	poetry run python3 manage.py migrate
 
 tests:
 	poetry run pytest -vvv
