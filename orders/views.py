@@ -11,8 +11,8 @@ from orders.serializers import CreateOrdersSerializer
 
 load_dotenv()
 
-api_key = os.getenv("API_KEY")
-api_secret = os.getenv("API_SECRET")
+api_key = os.getenv("BINANCE_API_KEY")
+api_secret = os.getenv("BINANCE_API_SECRET")
 
 client = Client(api_key, api_secret, testnet=True)
 
