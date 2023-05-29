@@ -40,8 +40,7 @@ Binance Orders - это веб-приложение, которое позвол
 
 http://localhost:8000/api/create_orders/
 
-Пример пост запроса:
-POST:
+Пример POST запроса:
 
   ```shell
 curl -X POST -H "Content-Type: application/json" -d '{
